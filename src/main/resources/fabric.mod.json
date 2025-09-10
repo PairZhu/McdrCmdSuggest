@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "${id}",
+	"version": "${version}",
+	"name": "${name}",
+	"description": "Command suggestion mod for MCDR Plugins",
+	"authors": [
+		"PairZhu"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "GPL-3.0",
+	"icon": "assets/mcdrcmdsuggest/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.pairzhu.mcdrcmdsuggest.McdrCmdSuggest"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=${loader_version}",
+		"fabric": "*",
+		"minecraft": "${minecraft_version}"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}

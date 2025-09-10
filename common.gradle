@@ -1,0 +1,157 @@
+apply plugin: 'maven-publish'
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'fabric-loom'
+apply plugin: 'com.replaymod.preprocess'
+
+int mcVersion = project.mcVersion
+
+repositories {
+    maven {
+        url = 'https://masa.dy.fi/maven'
+    }
+    maven {
+        url = 'https://maven.fallenbreath.me/releases'
+    }
+    maven {
+        url = 'https://jitpack.io'
+    }
+    maven {
+        url = 'https://www.cursemaven.com'
+    }
+}
+
+// https://github.com/FabricMC/fabric-loader/issues/783
+configurations {
+    modRuntimeOnly.exclude group: 'net.fabricmc', module: 'fabric-loader'
+    modCompileOnly.exclude group: 'com.github.2No2Name', module: 'McTester'
+    modImplementation.exclude group: 'com.github.2No2Name', module: 'McTester'
+}
+
+dependencies {
+    // loom
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    
+    // FastJson2
+    implementation "com.alibaba.fastjson2:fastjson2:2.0.43"
+	shadow "com.alibaba.fastjson2:fastjson2:2.0.43"
+}
+
+JavaVersion JAVA_COMPATIBILITY
+if (mcVersion >= 12005) {
+    JAVA_COMPATIBILITY = JavaVersion.VERSION_21
+} else if (mcVersion >= 11800) {
+    JAVA_COMPATIBILITY = JavaVersion.VERSION_17
+} else if (mcVersion >= 11700) {
+    JAVA_COMPATIBILITY = JavaVersion.VERSION_16
+} else {
+    JAVA_COMPATIBILITY = JavaVersion.VERSION_1_8
+}
+
+loom {
+    runConfigs.configureEach {
+        runDir '../../run'
+        ideConfigGenerated true
+    }
+}
+
+shadowJar {
+    configurations = [project.configurations.shadow]
+    exclude("META-INF")
+    archiveClassifier.set('shadow')
+}
+
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
+tasks.withType(ShadowJar).configureEach {
+    enableRelocation = true
+    relocationPrefix = 'mcdrcmdsuggest.libs'
+}
+
+remapJar {
+    dependsOn(shadowJar)
+    mustRunAfter(shadowJar)
+    inputFile = shadowJar.archiveFile
+}
+
+String modVersionSuffix = ''
+// detect github action environment variables
+// https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
+// 要使这段代码发挥作用，需要在Github Action的构建运行时在env中添加 BUILD_RELEASE: "true"
+if (System.getenv("BUILD_RELEASE") != "true") {
+    String buildNumber = System.getenv("BUILD_ID")
+    modVersionSuffix += buildNumber != null ? ('+build.' + buildNumber) : '-SNAPSHOT'
+}
+String fullModVersion = project.mod_version + modVersionSuffix
+String fullProjectVersion
+
+// Example version values:
+//   project.mod_version     1.0.3                      (the base mod version)
+//   modVersionSuffix        +build.88                  (use github action build number if possible)
+//   artifactVersionSuffix   -SNAPSHOT
+//   fullModVersion          1.0.3+build.88             (the actual mod version to use in the mod)
+//   fullProjectVersion      v1.0.3-mc1.15.2+build.88   (in build output jar name)
+//   fullArtifactVersion     1.0.3-mc1.15.2-SNAPSHOT    (maven artifact version)
+
+// 这部分可以自定义，前提是理解了代码内容
+group = project.maven_group
+if (System.getenv("JITPACK") == "true") {
+    // move mc version into archivesBaseName, so jitpack will be able to organize archives from multiple subprojects correctly
+    base.archivesName = project.archives_base_name + '-mc' + project.minecraft_version
+    fullProjectVersion = 'v' + project.mod_version + modVersionSuffix
+} else {
+    base.archivesName = project.archives_base_name
+    fullProjectVersion = 'v' + project.mod_version + '-mc' + project.minecraft_version + modVersionSuffix
+}
+version = fullProjectVersion
+
+// See https://youtrack.jetbrains.com/issue/IDEA-296490
+// if IDEA complains about "Cannot resolve resource filtering of MatchingCopyAction" and you want to know why
+processResources {
+    def modId = project.mod_id
+    def modName = project.mod_name
+    def minecraftVersion = project.minecraft_version
+    def loaderVersion = project.loader_version
+    
+    inputs.property "id", modId
+    inputs.property "name", modName
+    inputs.property "version", fullModVersion
+
+    filesMatching("fabric.mod.json") {
+        def valueMap = [
+                "id"               : modId,
+                "name"             : modName,
+                "version"          : fullModVersion,
+                "minecraft_version": minecraftVersion,
+                "loader_version"   : loaderVersion
+        ]
+
+        expand valueMap
+    }
+}
+
+// ensure that the encoding is set to UTF-8, no matter what the system default is
+// this fixes some edge cases with special characters not displaying correctly
+// see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+    options.compilerArgs << "-Xlint:deprecation" << "-Xlint:unchecked"
+    if (JAVA_COMPATIBILITY <= JavaVersion.VERSION_1_8) {
+        // suppressed "source/target value 8 is obsolete and will be removed in a future release"
+        options.compilerArgs << '-Xlint:-options'
+    }
+}
+
+java {
+    sourceCompatibility = JAVA_COMPATIBILITY
+    targetCompatibility = JAVA_COMPATIBILITY
+}
+
+jar {
+    def archivesBaseName = project.archives_base_name
+    from(rootProject.file('LICENSE')) {
+        rename { "${it}_${archivesBaseName}" }
+    }
+}

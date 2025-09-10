@@ -1,0 +1,77 @@
+plugins {
+    id 'fabric-loom' version '1.10-SNAPSHOT' apply false  //Fabric loom，已经配制好的
+
+    // 主角
+    // https://github.com/ReplayMod/preprocessor
+    // https://github.com/Fallen-Breath/preprocessor
+    id 'com.replaymod.preprocess' version '9d21b334a7'
+
+    // Shadow Jar
+    id 'com.github.johnrengelman.shadow' version '8.1.1' apply false
+}
+
+version = project.mod_version
+group = project.maven_group
+
+preprocess {
+    strictExtraMappings.set(false)
+
+    // 读取支持的版本列表
+    def versionsDir = file('versions')
+    def versions = versionsDir.listFiles().findAll { it.isDirectory() }
+            .collect { it.name }
+            .findAll { it.matches(/^\d+\.\d+$/) }
+            .sort { a, b -> b.compareTo(a) }  // 版本号从高到低排序
+
+    // 读取主版本
+    def mainVersion = file('versions/mainProject').text.trim()
+
+    // 存储所有创建的节点
+    def nodes = [:]
+    
+    // 为每个版本创建节点
+    versions.each { version ->
+        def parts = version.split('\\.')
+        if (parts.length == 2) {
+            parts = [parts[0], parts[1], '00']
+        }
+        def nodeId = parts.collect { it.padLeft(2, '0') }.join('') as Integer
+        nodes[version] = createNode(version, nodeId, "")
+        println "Created node for version: ${version} with ID: ${nodeId}"
+    }
+    
+    // 创建版本链接
+    for (int i = 0; i < versions.size() - 1; i++) {
+        def higherVersion = versions[i]
+        def lowerVersion = versions[i + 1]
+        nodes[higherVersion].link(nodes[lowerVersion], null)
+        println "Linked ${higherVersion} to ${lowerVersion}"
+    }
+}
+
+
+// 收拢所有版本的jar文件
+tasks.register('buildAndGather') {
+    subprojects {
+        dependsOn project.tasks.named('build').get()
+    }
+    doFirst {
+        println 'Gathering builds'
+        def buildLibs = {
+            p -> p.buildDir.toPath().resolve('libs')
+        }
+        delete fileTree(buildLibs(rootProject)) {
+            include '*'
+        }
+        subprojects {
+            copy {
+                from(buildLibs(project)) {
+                    include '*.jar'
+                    exclude '*-dev.jar', '*-sources.jar', '*-shadow.jar'
+                }
+                into buildLibs(rootProject)
+                duplicatesStrategy DuplicatesStrategy.INCLUDE
+            }
+        }
+    }
+}
