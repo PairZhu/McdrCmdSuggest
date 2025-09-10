@@ -8,6 +8,8 @@
 
 McdrCmdSuggest is a Fabric mod that provides a more elegant command completion experience for [MCDReforged](https://github.com/Fallen-Breath/MCDReforged). By registering MCDR commands on the Minecraft server and sending them to the client, players can enjoy a native command completion experience.
 
+![1757522576816](image/1757522576816.png)
+
 ## 🛠️ Features
 
 - ⚡ Native command completion: Registers MCDR commands as native Minecraft commands, allowing silent execution of MCDR commands.
@@ -21,10 +23,12 @@ McdrCmdSuggest is a Fabric mod that provides a more elegant command completion e
 1. Download the latest version of McdrCmdSuggest from [Modrinth](https://modrinth.com/mod/mcdrcmdsuggest) or [GitHub Releases](https://github.com/PairZhu/McdrCmdSuggest/releases).
 2. Place the downloaded jar file into the `mods` folder of your Minecraft server.
 3. Install the corresponding MCDR plugin on the server (needs to be installed separately).
+4. Restart the server.
 
 ## 📝 Usage
 
-This mod needs to be used together with the MCDR plugin on the server. When you join a server with the plugin installed, MCDR commands will be automatically registered as native Minecraft commands, and you can use the Tab key for command completion.
+Enter existing MCDR commands in the standard Minecraft command format starting with `/`, then use the Tab key in-game for command completion. For example, `/!!help`, `/!!MCDR xxx` (no need to configure other plugins or modify plugin code).
+
 
 ## 🔍 Comparison with Other Mods
 
