@@ -64,12 +64,15 @@ jobs:
           path: build/libs/*.jar
           retention-days: 1
 
+      - name: Build Changelog
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@v5
+
       - name: Create GitHub Release
-        uses: "marvinpinto/action-automatic-releases@latest"
+        uses: softprops/action-gh-release@v2
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
           files: build/libs/*.jar
+          body: ${{ steps.build_changelog.outputs.changelog }}
 
   # 为每个Minecraft版本独立发布
   publish:
@@ -111,18 +114,6 @@ jobs:
           file: versions/${{ matrix.mc_version }}/gradle.properties
           all: true
 
-      - name: Read release body as changelog
-        id: changelog
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const response = await github.rest.repos.getReleaseByTag({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag: context.ref.replace('refs/tags/', '')
-            });
-            return response.data.body;
-
       - name: Publish to Modrinth
         uses: Kir-Antipov/mc-publish@v3.3
         with:
@@ -132,7 +123,7 @@ jobs:
           files: build/libs/filtered/*.jar
           name: ${{ steps.properties_common.outputs.mod_name }} v${{ steps.properties_common.outputs.mod_version }} (MC ${{ steps.properties_version.outputs.minecraft_version }})
           version: v${{ steps.properties_common.outputs.mod_version }}-mc${{ steps.properties_version.outputs.minecraft_version }} 
-          changelog: ${{ steps.changelog.outputs.result }}
+          changelog: ${{ needs.build.steps.build_changelog.outputs.changelog }}
           version-type: release
           loaders: fabric
           game-versions: ${{ steps.properties_version.outputs.game_versions }}
