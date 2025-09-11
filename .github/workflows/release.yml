@@ -6,8 +6,11 @@ on:
       - "v*"
 
 jobs:
-  build-and-release:
+  # 构建作业：构建所有版本并上传构建产物
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      mc_versions: ${{ steps.get_mc_versions.outputs.result }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -21,12 +24,10 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: "21"
-          distribution: "microsoft"
+          distribution: "temurin"
 
       - name: Setup Gradle cache
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-home-cache-cleanup: true
 
       - name: Set build environment variables
         run: echo "BUILD_RELEASE=true" >> $GITHUB_ENV
@@ -37,41 +38,82 @@ jobs:
       - name: Build all versions
         run: ./gradlew buildAndGather
 
-      - name: Get release version
-        id: get_version
-        run: |
-          RELEASE_VERSION=${GITHUB_REF#refs/tags/}
-          echo "VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
-          echo "version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
+      - name: Get Minecraft versions
+        id: get_mc_versions
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const versionsDir = path.join(process.cwd(), 'versions');
+            const versions = fs.readdirSync(versionsDir).filter(dir => fs.statSync(path.join(versionsDir, dir)).isDirectory() && /^\d+\.\d+(\.\d+)?$/.test(dir));
+            return versions;
 
-      - name: Get supported Minecraft versions
-        id: mc_versions
-        run: |
-          # 获取versions目录下的所有子目录，排除mainProject文件
-          MC_VERSIONS=$(find versions -maxdepth 1 -mindepth 1 -type d -not -path "*/\.*" | grep -v "mainProject" | sort | sed 's|versions/||' | grep -E '^[0-9]+\.[0-9]+$')
-
-          # 格式化为多行字符串，适用于GitHub Actions
-          FORMATTED_MC_VERSIONS=$(echo "$MC_VERSIONS" | sed ':a;N;$!ba;s/\n/\\n/g')
-
-          # 输出到GitHub Actions环境
-          echo "mc_versions<<EOF" >> $GITHUB_OUTPUT
-          echo "$MC_VERSIONS" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-          # 打印找到的Minecraft版本，用于调试
-          echo "Found Minecraft versions: $MC_VERSIONS"
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: build/libs/*.jar
+          retention-days: 1
 
       - name: Create GitHub Release
-        id: create_release
-        uses: softprops/action-gh-release@v2
+        uses: "marvinpinto/action-automatic-releases@latest"
         with:
-          files: |
-            build/libs/*.jar
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: Release ${{ env.VERSION }}
-          draft: false
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
-          generate_release_notes: true
+          files: build/libs/*.jar
+
+  # 为每个Minecraft版本独立发布
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        mc_version: ${{ fromJson(needs.build.outputs.mc_versions) }}
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: build/libs
+
+      - name: Filter artifacts for current MC version
+        run: |
+          mkdir -p build/libs/filtered
+          # 移动当前Minecraft版本的jar文件到filtered目录
+          find build/libs -name "*-mc${{ matrix.mc_version }}*.jar" -not -name "*-dev.jar" -not -name "*-sources.jar" -not -name "*-javadoc.jar" -not -name "*-all.jar" -not -name "*-shadow.jar" -exec cp {} build/libs/filtered/ \;
+          echo "Found artifacts for MC ${{ matrix.mc_version }}:"
+          ls -la build/libs/filtered/
+
+      - name: Read common properties
+        id: properties_common
+        uses: BrycensRanch/read-properties-action@v1
+        with:
+          file: gradle.properties
+          all: true
+
+      - name: Read version-specific properties
+        id: properties_version
+        uses: BrycensRanch/read-properties-action@v1
+        with:
+          file: versions/${{ matrix.mc_version }}/gradle.properties
+          all: true
+
+      - name: Read release body as changelog
+        id: changelog
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const response = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: context.ref.replace('refs/tags/', '')
+            });
+            return response.data.body;
 
       - name: Publish to Modrinth
         uses: Kir-Antipov/mc-publish@v3.3
@@ -79,13 +121,11 @@ jobs:
           modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
           modrinth-token: ${{ secrets.MODRINTH_API_TOKEN }}
 
-          files: build/libs/!(*-@(dev|sources|javadoc|all)).jar
-          name: ${{ env.VERSION }}
-          version: ${{ env.VERSION }}
+          files: build/libs/filtered/*.jar
+          name: ${{ steps.properties_common.outputs.mod_name }} v${{ steps.properties_common.outputs.mod_version }} (MC ${{ steps.properties_version.outputs.minecraft_version }})
+          version: v${{ steps.properties_common.outputs.mod_version }}-mc${{ steps.properties_version.outputs.minecraft_version }} 
+          changelog: ${{ steps.changelog.outputs.result }}
           version-type: release
-          changelog-file: CHANGELOG.md
-          game-versions: ${{ steps.mc_versions.outputs.mc_versions }}
-          loaders: |
-            fabric
-          dependencies: |
-            fabric-api(required)
+          loaders: fabric
+          game-versions: ${{ steps.properties_version.outputs.game_versions }}
+          dependencies: fabric-api(required)

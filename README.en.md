@@ -45,7 +45,7 @@ McdrCmdSuggest implements command completion as follows:
 
 1. Registers a special command `__mcdrcmdsuggest_register` to receive command registration information from the server.
 2. Dynamically registers Minecraft commands based on the received information.
-3. If a command includes argument suggestions (`suggests`), a suggest method is added to query the corresponding MCDR plugin for suggestions (uses HTTP by default, only local communication between server and MCDR, no need to expose ports). Client suggestions are transmitted via Minecraft's native protocol.
+3. If a command includes argument suggestions (`suggests`), a suggests method is added to query the corresponding MCDR plugin for suggestions (uses HTTP by default, only local communication between server and MCDR, no need to expose ports). Client suggestions are transmitted via Minecraft's native protocol.
 
 ## 🤝 Contributing
 

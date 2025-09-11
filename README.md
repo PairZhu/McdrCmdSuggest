@@ -43,7 +43,7 @@ McdrCmdSuggest通过以下方式实现命令补全：
 
 1. 注册一个特殊的命令`__mcdrcmdsuggest_register`，用于接收服务器发送的命令注册信息
 2. 根据接收到的信息，动态注册Minecraft命令
-3. 如果命令包含参数建议（suggests），则将为其添加suggest方法，向配套的MCDR插件查询建议结果（默认使用http，仅服务端和MCDR进行本地通讯，无需暴露端口），客户端的建议由Minecraft自带的通讯协议传输
+3. 如果命令包含参数建议（suggests），则将为其添加suggests方法，向配套的MCDR插件查询建议结果（默认使用http，仅服务端和MCDR进行本地通讯，无需暴露端口），客户端的建议由Minecraft自带的通讯协议传输
  
 ## 🤝 贡献
 

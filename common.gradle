@@ -114,10 +114,12 @@ processResources {
     def modName = project.mod_name
     def minecraftVersion = project.minecraft_version
     def loaderVersion = project.loader_version
+    def minecraftDependency = project.minecraft_dependency
     
     inputs.property "id", modId
     inputs.property "name", modName
     inputs.property "version", fullModVersion
+    inputs.property "minecraft_version", minecraftVersion
 
     filesMatching("fabric.mod.json") {
         def valueMap = [
@@ -125,7 +127,8 @@ processResources {
                 "name"             : modName,
                 "version"          : fullModVersion,
                 "minecraft_version": minecraftVersion,
-                "loader_version"   : loaderVersion
+                "loader_version"   : loaderVersion,
+                "minecraft_dependency": minecraftDependency
         ]
 
         expand valueMap
