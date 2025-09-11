@@ -26,8 +26,16 @@ jobs:
           java-version: "21"
           distribution: "temurin"
 
-      - name: Setup Gradle cache
-        uses: gradle/actions/setup-gradle@v4
+      - name: Cache gradle files
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ./.gradle/loom-cache
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle', '**/gradle.properties', '**/*.accesswidener', 'settings.json') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Set build environment variables
         run: echo "BUILD_RELEASE=true" >> $GITHUB_ENV
