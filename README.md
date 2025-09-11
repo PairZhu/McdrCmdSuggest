@@ -6,6 +6,8 @@
 
 ## ✨ 更优雅的MCDR命令补全实现
 
+需要配合[CommandSuggest](https://mcdreforged.com/zh-CN/plugin/command_suggest)插件使用。
+
 McdrCmdSuggest是一个Fabric模组，为[MCDReforged](https://github.com/Fallen-Breath/MCDReforged)提供更优雅的命令补全功能。通过在Minecraft服务端中注册MCDR命令并发送到客户端，使玩家可以获得原生的命令补全体验。
 ![1757522576816](image/1757522576816.png)
 
@@ -21,7 +23,7 @@ McdrCmdSuggest是一个Fabric模组，为[MCDReforged](https://github.com/Fallen
 
 1. 从[Modrinth](https://modrinth.com/mod/mcdrcmdsuggest)或[GitHub Releases](https://github.com/PairZhu/McdrCmdSuggest/releases)下载最新版本的McdrCmdSuggest
 2. 将下载的jar文件放入Minecraft服务端的mods文件夹中
-3. 在服务器端安装对应的MCDR插件（需要单独安装）
+3. 在服务器端安装对应的[MCDR插件](https://mcdreforged.com/zh-CN/plugin/command_suggest)
 4. 重启服务器
 
 ## 📝 使用方法
