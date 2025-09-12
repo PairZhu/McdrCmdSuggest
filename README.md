@@ -16,7 +16,7 @@ McdrCmdSuggest是一个Fabric模组，为[MCDReforged](https://github.com/Fallen
 - ⚡ 原生命令补全体验：将MCDR命令注册为Minecraft原生命令，允许静默发送MCDR命令
 - 💡 支持参数建议补全（MCDR插件中的suggests方法）
 - 🖥️ 纯服务端Mod，客户端无需安装，支持原版客户端
-- 🛡️ 不依赖mixins，更易于维护多版本
+- 🛡️ 不依赖mixins，更易于维护多版本，**1.14 ~ 1.21.8**正式版全版本支持
 - ⚙️ 默认配置全自动，无需手动配置也可开箱即用
 
 ## 📦 安装
