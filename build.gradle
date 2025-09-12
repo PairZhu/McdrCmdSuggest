@@ -1,7 +1,6 @@
 plugins {
     id 'fabric-loom' version '1.10-SNAPSHOT' apply false  //Fabric loom，已经配制好的
 
-    // 主角
     // https://github.com/ReplayMod/preprocessor
     // https://github.com/Fallen-Breath/preprocessor
     id 'com.replaymod.preprocess' version '9d21b334a7'
@@ -20,7 +19,7 @@ preprocess {
     def versionsDir = file('versions')
     def versions = versionsDir.listFiles().findAll { it.isDirectory() }
             .collect { it.name }
-            .findAll { it.matches(/^\d+\.\d+$/) }
+            .findAll { it.matches(/^\d+\.\d+(\.\d+)?$/) }  // 只匹配形如 X.Y 或 X.Y.Z 的版本号
             .sort { a, b -> b.compareTo(a) }  // 版本号从高到低排序
 
     // 读取主版本

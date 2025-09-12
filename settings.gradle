@@ -23,12 +23,11 @@ pluginManagement {
     }
 }
 
-// 扫描versions目录下的所有子目录作为子项目
+// 扫描versions目录下的所有版本号子目录作为子项目
 def versionsDir = file('versions')
-versionsDir.listFiles().findAll {
-    it.isDirectory() && it.name != 'mainProject'
-}.each { versionDir ->
-    def version = versionDir.name
+versionsDir.listFiles().findAll { it.isDirectory() }.collect { it.name }
+    .findAll { it.matches(/^\d+\.\d+(\.\d+)?$/) }  // 只匹配形如 X.Y 或 X.Y.Z 的版本号
+    .each { version ->
     include(":$version")
 
     def proj = project(":$version")

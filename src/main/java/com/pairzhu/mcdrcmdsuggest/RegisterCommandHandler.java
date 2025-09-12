@@ -115,13 +115,13 @@ public class RegisterCommandHandler implements Command<ServerCommandSource>, Aut
         }
 
         try {
-            var rootNode = CommandFields.rootCommandNode.get(dispatcher);
+            Object rootNode = CommandFields.rootCommandNode.get(dispatcher);
             @SuppressWarnings("unchecked")
-            var children =
+            Map<String, CommandNode<ServerCommandSource>> children =
                     (Map<String, CommandNode<ServerCommandSource>>) CommandFields.commandNodeChildren
                             .get(rootNode);
             @SuppressWarnings("unchecked")
-            var literals =
+            Map<String, LiteralCommandNode<ServerCommandSource>> literals =
                     (Map<String, LiteralCommandNode<ServerCommandSource>>) CommandFields.commandNodeLiterals
                             .get(rootNode);
 
@@ -182,7 +182,7 @@ public class RegisterCommandHandler implements Command<ServerCommandSource>, Aut
         try {
             Node node = new Node(nodeJson, suggestImplement);
             @SuppressWarnings("unchecked")
-            var brigadierNode =
+            LiteralArgumentBuilder<ServerCommandSource> brigadierNode =
                     (LiteralArgumentBuilder<ServerCommandSource>) node.toBrigadierNode();
             dispatcher.register(brigadierNode);
             registeredCommands.add(node.name);

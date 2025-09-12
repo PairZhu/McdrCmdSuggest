@@ -26,14 +26,14 @@ public class Node {
         this.suggestible = json.getBooleanValue("suggestible");
         this.suggestImplement = suggestImplement;
         if (json.containsKey("children")) {
-            for (var childJson : json.getJSONArray("children").toArray(JSONObject.class)) {
+            for (JSONObject childJson : json.getJSONArray("children").toArray(JSONObject.class)) {
                 this.children.add(new Node(childJson, suggestImplement));
             }
         }
     }
 
     public ArgumentBuilder<ServerCommandSource, ?> toBrigadierNode() {
-        var argumentBuilder = createArgumentBuilder();
+        ArgumentBuilder<ServerCommandSource, ?> argumentBuilder = createArgumentBuilder();
 
         if (needsSuggestion()) {
             if (suggestImplement == null) {

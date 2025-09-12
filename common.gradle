@@ -32,11 +32,30 @@ dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    if (project.hasProperty('fabric_api_version')) {
+        modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    }
+    // 兼容旧版本
+    if (project.hasProperty('fabric_api_old_version')) {
+        modImplementation "net.fabricmc:fabric:${project.fabric_api_old_version}"
+    }
     
     // FastJson2
     implementation "com.alibaba.fastjson2:fastjson2:2.0.43"
-	shadow "com.alibaba.fastjson2:fastjson2:2.0.43"
+    include "com.alibaba.fastjson2:fastjson2:2.0.43"
+    
+    // 1.17版本以下需要引入旧版的slf4j和log4j
+    if (mcVersion < 11700) {        
+        implementation "org.slf4j:slf4j-api:1.7.30"
+        implementation "org.apache.logging.log4j:log4j-slf4j-impl:2.11.2"
+        implementation "org.apache.logging.log4j:log4j-api:2.11.2"
+        implementation "org.apache.logging.log4j:log4j-core:2.11.2"
+        
+        include "org.slf4j:slf4j-api:1.7.30"
+        include "org.apache.logging.log4j:log4j-slf4j-impl:2.11.2"
+        include "org.apache.logging.log4j:log4j-api:2.11.2"
+        include "org.apache.logging.log4j:log4j-core:2.11.2"
+    }
 }
 
 JavaVersion JAVA_COMPATIBILITY
