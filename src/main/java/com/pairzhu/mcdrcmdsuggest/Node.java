@@ -48,7 +48,8 @@ public class Node {
                 if (player == null) {
                     return CommandSource.suggestMatching(new String[0], builder);
                 }
-                String command = builder.getInput().substring(1);
+                String input = builder.getInput();
+                String command = input.startsWith("/") ? input.substring(1) : input;
                 return CommandSource
                         .suggestMatching(suggestImplement.getSuggestions(player, command), builder);
             });
@@ -57,7 +58,8 @@ public class Node {
 
         argumentBuilder.executes(context -> {
             ServerCommandSource source = context.getSource();
-            String command = context.getInput().substring(1);
+            String input = context.getInput();
+            String command = input.startsWith("/") ? input.substring(1) : input;
             String name = source != null ? source.getName() : "unknown";
             McdrCmdSuggest.LOGGER.info("<{}> {}", name, command);
             return Command.SINGLE_SUCCESS;
