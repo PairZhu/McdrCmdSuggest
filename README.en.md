@@ -2,7 +2,8 @@
 
 **English | [简体中文](./README.md)**
 
-[![Modrinth](https://img.shields.io/modrinth/v/mcdrcmdsuggest?logo=modrinth&label=Modrinth&color=%2300AF5C)](https://modrinth.com/mod/mcdrcmdsuggest)
+[![Modrinth Downloads](https://img.shields.io/modrinth/dt/mcdrcmdsuggest?logo=modrinth&label=Modrinth)
+](https://modrinth.com/mod/mcdrcmdsuggest)
 
 ## ✨ A More Elegant MCDR Command Completion
 
