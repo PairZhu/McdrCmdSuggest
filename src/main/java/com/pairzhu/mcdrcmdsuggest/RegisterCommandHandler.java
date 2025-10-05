@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.ServerCommandSource;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
@@ -195,8 +196,8 @@ public class RegisterCommandHandler implements Command<ServerCommandSource>, Aut
 
     private void updatePlayerCommandTrees(MinecraftServer server) throws CommandOperationException {
         try {
-            server.getPlayerManager().getPlayerList().forEach(player -> Objects
-                    .requireNonNull(player.getServer()).getPlayerManager().sendCommandTree(player));
+            PlayerManager manager = server.getPlayerManager();
+            manager.getPlayerList().forEach(manager::sendCommandTree);
         } catch (Exception e) {
             throw new CommandOperationException("Failed to update command tree for players", e);
         }
