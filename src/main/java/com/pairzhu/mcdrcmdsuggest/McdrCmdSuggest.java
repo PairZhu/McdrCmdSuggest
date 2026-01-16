@@ -45,6 +45,7 @@ public class McdrCmdSuggest implements ModInitializer {
 								.then(CommandManager
 										.argument("json_data", StringArgumentType.greedyString())
 										.executes(new RegisterCommandHandler()))));
+		LOGGER.info("$$McdrCmdSuggest initialized$$");
 	}
 }
 
