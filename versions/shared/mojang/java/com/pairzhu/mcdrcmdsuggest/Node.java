@@ -1,6 +1,7 @@
 package com.pairzhu.mcdrcmdsuggest;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -64,7 +65,13 @@ public class Node {
             case "INTEGER":
                 return Commands.argument(node.name, IntegerArgumentType.integer());
             case "FLOAT":
+            case "NUMBER":
                 return Commands.argument(node.name, DoubleArgumentType.doubleArg());
+            case "BOOLEAN":
+                return Commands.argument(node.name, BoolArgumentType.bool());
+            case "TEXT":
+            case "ENUMERATION":
+                return Commands.argument(node.name, StringArgumentType.word());
             case "QUOTABLE_TEXT":
                 return Commands.argument(node.name, StringArgumentType.string());
             case "GREEDY_TEXT":
