@@ -1,9 +1,43 @@
 apply plugin: 'maven-publish'
-apply plugin: 'com.github.johnrengelman.shadow'
-apply plugin: 'fabric-loom'
-apply plugin: 'com.replaymod.preprocess'
+apply plugin: 'com.gradleup.shadow'
 
-int mcVersion = project.mcVersion
+def mcVersionParts = project.minecraft_version.split('\\.') as List
+if (mcVersionParts.size() == 2) {
+    mcVersionParts += '0'
+}
+int mcVersion = mcVersionParts.collect { it.padLeft(2, '0') }.join('') as Integer
+boolean usesUnobfuscatedMinecraft = mcVersion >= 260100
+
+apply plugin: usesUnobfuscatedMinecraft ? 'net.fabricmc.fabric-loom' : 'net.fabricmc.fabric-loom-remap'
+
+sourceSets {
+    main {
+        resources.setSrcDirs([rootProject.file('src/main/resources'), file('src/main/resources')])
+        java.srcDir(rootProject.file('src/core/java'))
+        if (usesUnobfuscatedMinecraft) {
+            java.srcDir(rootProject.file('versions/shared/mojang/java'))
+        } else {
+            def commandApiSources
+            if (mcVersion >= 11900) {
+                commandApiSources = rootProject.file('versions/shared/fabric-command-v2/java')
+            } else if (mcVersion >= 11600) {
+                commandApiSources = rootProject.file('versions/shared/fabric-command-v1/java')
+            } else {
+                commandApiSources = rootProject.file('versions/shared/fabric-command-registry/java')
+            }
+            if (mcVersion < 11700) {
+                java.srcDir(rootProject.file('versions/shared/yarn-legacy-command/java'))
+            } else if (mcVersion < 11800) {
+                java.srcDir(rootProject.file('versions/shared/yarn-command/java'))
+                java.srcDir(rootProject.file('versions/shared/yarn-server-legacy/java'))
+            } else {
+                java.srcDir(rootProject.file('versions/shared/yarn-command/java'))
+                java.srcDir(rootProject.file('versions/shared/yarn-server-modern/java'))
+            }
+            java.srcDir(commandApiSources)
+        }
+    }
+}
 
 repositories {
     maven {
@@ -22,26 +56,30 @@ repositories {
 
 // https://github.com/FabricMC/fabric-loader/issues/783
 configurations {
-    modRuntimeOnly.exclude group: 'net.fabricmc', module: 'fabric-loader'
-    modCompileOnly.exclude group: 'com.github.2No2Name', module: 'McTester'
-    modImplementation.exclude group: 'com.github.2No2Name', module: 'McTester'
+    if (!usesUnobfuscatedMinecraft) {
+        modRuntimeOnly.exclude group: 'net.fabricmc', module: 'fabric-loader'
+        modCompileOnly.exclude group: 'com.github.2No2Name', module: 'McTester'
+        modImplementation.exclude group: 'com.github.2No2Name', module: 'McTester'
+    }
 }
 
 dependencies {
     // loom
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    if (project.hasProperty('yarn_mappings') && project.yarn_mappings.toString().trim()) {
-        mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    } else {
-        mappings loom.officialMojangMappings()
+    if (!usesUnobfuscatedMinecraft) {
+        if (project.hasProperty('yarn_mappings') && project.yarn_mappings.toString().trim()) {
+            mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+        } else {
+            mappings loom.officialMojangMappings()
+        }
     }
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    "${usesUnobfuscatedMinecraft ? 'implementation' : 'modImplementation'}" "net.fabricmc:fabric-loader:${project.loader_version}"
     if (project.hasProperty('fabric_api_version')) {
-        modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+        "${usesUnobfuscatedMinecraft ? 'implementation' : 'modImplementation'}" "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
     }
     // 兼容旧版本
     if (project.hasProperty('fabric_api_old_version')) {
-        modImplementation "net.fabricmc:fabric:${project.fabric_api_old_version}"
+        "${usesUnobfuscatedMinecraft ? 'implementation' : 'modImplementation'}" "net.fabricmc:fabric:${project.fabric_api_old_version}"
     }
     
     // FastJson2
@@ -63,7 +101,9 @@ dependencies {
 }
 
 JavaVersion JAVA_COMPATIBILITY
-if (mcVersion >= 12005) {
+if (mcVersion >= 260100) {
+    JAVA_COMPATIBILITY = JavaVersion.VERSION_25
+} else if (mcVersion >= 12005) {
     JAVA_COMPATIBILITY = JavaVersion.VERSION_21
 } else if (mcVersion >= 11800) {
     JAVA_COMPATIBILITY = JavaVersion.VERSION_17
@@ -89,14 +129,23 @@ shadowJar {
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 tasks.withType(ShadowJar).configureEach {
-    enableRelocation = true
+    enableAutoRelocation = true
     relocationPrefix = 'mcdrcmdsuggest.libs'
 }
 
-remapJar {
-    dependsOn(shadowJar)
-    mustRunAfter(shadowJar)
-    inputFile = shadowJar.archiveFile
+if (usesUnobfuscatedMinecraft) {
+    jar {
+        dependsOn(shadowJar)
+        mustRunAfter(shadowJar)
+        from(zipTree(shadowJar.archiveFile))
+        duplicatesStrategy DuplicatesStrategy.EXCLUDE
+    }
+} else {
+    remapJar {
+        dependsOn(shadowJar)
+        mustRunAfter(shadowJar)
+        inputFile = shadowJar.archiveFile
+    }
 }
 
 String modVersionSuffix = ''
@@ -138,11 +187,13 @@ processResources {
     def minecraftVersion = project.minecraft_version
     def loaderVersion = project.loader_version
     def minecraftDependency = project.minecraft_dependency
+    def fabricDependency = project.hasProperty('fabric_dependency') ? project.fabric_dependency : 'fabric'
     
     inputs.property "id", modId
     inputs.property "name", modName
     inputs.property "version", fullModVersion
     inputs.property "minecraft_version", minecraftVersion
+    inputs.property "fabric_dependency", fabricDependency
 
     filesMatching("fabric.mod.json") {
         def valueMap = [
@@ -151,6 +202,7 @@ processResources {
                 "version"          : fullModVersion,
                 "minecraft_version": minecraftVersion,
                 "loader_version"   : loaderVersion,
+                "fabric_dependency": fabricDependency,
                 "minecraft_dependency": minecraftDependency
         ]
 
@@ -173,6 +225,11 @@ tasks.withType(JavaCompile).configureEach {
 java {
     sourceCompatibility = JAVA_COMPATIBILITY
     targetCompatibility = JAVA_COMPATIBILITY
+    if (usesUnobfuscatedMinecraft) {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(26)
+        }
+    }
 }
 
 jar {

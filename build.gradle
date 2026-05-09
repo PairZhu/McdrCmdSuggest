@@ -1,53 +1,13 @@
 plugins {
-    id 'fabric-loom' version '1.10-SNAPSHOT' apply false  //Fabric loom，已经配制好的
-
-    // https://github.com/ReplayMod/preprocessor
-    // https://github.com/Fallen-Breath/preprocessor
-    id 'com.replaymod.preprocess' version '9d21b334a7'
+    id 'net.fabricmc.fabric-loom-remap' version '1.16.1' apply false
+    id 'net.fabricmc.fabric-loom' version '1.16.1' apply false
 
     // Shadow Jar
-    id 'com.github.johnrengelman.shadow' version '8.1.1' apply false
+    id 'com.gradleup.shadow' version '9.4.1' apply false
 }
 
 version = project.mod_version
 group = project.maven_group
-
-preprocess {
-    strictExtraMappings.set(false)
-
-    // 读取支持的版本列表
-    def versionsDir = file('versions')
-    def versions = versionsDir.listFiles().findAll { it.isDirectory() }
-            .collect { it.name }
-            .findAll { it.matches(/^\d+\.\d+(\.\d+)?$/) }  // 只匹配形如 X.Y 或 X.Y.Z 的版本号
-            .sort { a, b -> b.compareTo(a) }  // 版本号从高到低排序
-
-    // 读取主版本
-    def mainVersion = file('versions/mainProject').text.trim()
-
-    // 存储所有创建的节点
-    def nodes = [:]
-    
-    // 为每个版本创建节点
-    versions.each { version ->
-        def parts = version.split('\\.')
-        if (parts.length == 2) {
-            parts = [parts[0], parts[1], '00']
-        }
-        def nodeId = parts.collect { it.padLeft(2, '0') }.join('') as Integer
-        nodes[version] = createNode(version, nodeId, "")
-        println "Created node for version: ${version} with ID: ${nodeId}"
-    }
-    
-    // 创建版本链接
-    for (int i = 0; i < versions.size() - 1; i++) {
-        def higherVersion = versions[i]
-        def lowerVersion = versions[i + 1]
-        nodes[higherVersion].link(nodes[lowerVersion], null)
-        println "Linked ${higherVersion} to ${lowerVersion}"
-    }
-}
-
 
 // 收拢所有版本的jar文件
 tasks.register('buildAndGather') {
