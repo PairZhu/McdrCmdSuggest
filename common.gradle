@@ -110,7 +110,7 @@ loom {
 shadowJar {
     configurations = [project.configurations.shadow]
     exclude("META-INF")
-    archiveClassifier.set('shadow')
+    archiveClassifier.set(usesUnobfuscatedMinecraft ? '' : 'shadow')
 }
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
@@ -122,10 +122,10 @@ tasks.withType(ShadowJar).configureEach {
 
 if (usesUnobfuscatedMinecraft) {
     jar {
+        enabled = false
+    }
+    assemble {
         dependsOn(shadowJar)
-        mustRunAfter(shadowJar)
-        from(zipTree(shadowJar.archiveFile))
-        duplicatesStrategy DuplicatesStrategy.EXCLUDE
     }
 } else {
     remapJar {
