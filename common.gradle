@@ -14,6 +14,7 @@ sourceSets {
     main {
         resources.setSrcDirs([rootProject.file('src/main/resources'), file('src/main/resources')])
         java.srcDir(rootProject.file('src/core/java'))
+        java.srcDir(file('src/main/java'))
         if (usesUnobfuscatedMinecraft) {
             java.srcDir(rootProject.file('versions/shared/mojang/java'))
         } else {
@@ -194,6 +195,14 @@ processResources {
         ]
 
         expand valueMap
+    }
+    if (mcVersion == 260300) {
+        doLast {
+            def metadataFile = destinationDir.toPath().resolve('fabric.mod.json').toFile()
+            def metadata = new groovy.json.JsonSlurper().parse(metadataFile)
+            metadata.mixins = ['mcdrcmdsuggest.compat.mixins.json']
+            metadataFile.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(metadata))
+        }
     }
 }
 

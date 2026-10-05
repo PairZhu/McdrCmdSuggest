@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "com.pairzhu.mcdrcmdsuggest.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "server": ["SystemChatLogMixin"],
+  "injectors": {"defaultRequire": 1}
+}

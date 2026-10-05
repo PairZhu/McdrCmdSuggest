@@ -18,7 +18,7 @@ McdrCmdSuggest is a Fabric mod that provides a more elegant command completion e
 - ⚡ Native command completion: Registers MCDR commands as native Minecraft commands, allowing silent execution of MCDR commands.
 - 💡 Supports argument suggestion completion (the `suggests` method in MCDR plugins).
 - 🖥️ Pure server-side mod: No client installation required, compatible with vanilla clients.
-- 🛡️ Does not rely on mixins, making it easier to maintain across multiple versions, with full support for official versions **1.14 ~ 1.21.x, 26.1, and 26.2**.
+- 🛡️ Supports official versions **1.14 ~ 1.21.x, 26.1, 26.2, and 26.3**. The 26.3 artifact uses one server-side Mixin to preserve the console message format expected by existing MCDR plugins; earlier targets remain unchanged.
 - ⚙️ Fully automatic default configuration: Works out of the box without manual setup.
 
 ## 📦 Installation
